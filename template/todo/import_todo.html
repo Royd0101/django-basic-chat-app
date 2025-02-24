@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Import ToDo</title>
+</head>
+<body>
+    <h2>Import To-Do List from CSV</h2>
+
+    <!-- Display messages -->
+    {% if messages %}
+        {% for message in messages %}
+            <p style="color: {% if message.tags == 'error' %}red{% else %}green{% endif %};">
+                {{ message }}
+            </p>
+        {% endfor %}
+    {% endif %}
+
+    <!-- Upload Form -->
+    <form action="{% url 'import_todo' %}" method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+        <label for="csv_file">Upload CSV File:</label>
+        <input type="file" name="csv_file" accept=".csv" required>
+        <button type="submit">Import</button>
+    </form>
+
+    <h3>CSV Format:</h3>
+    <p><strong>title, description, completed</strong> (Completed should be True/False)</p>
+    <pre>
+Example:
+Task 1, Description of Task 1, True
+Task 2, Description of Task 2, False
+    </pre>
+
+    <a href="{% url 'import_todo' %}">Back to ToDo List</a>
+</body>
+</html>

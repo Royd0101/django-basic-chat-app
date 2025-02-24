@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat</title>
+</head>
+<body>
+    <h2>Welcome, {{ user.username }}</h2>
+    
+    <textarea id="message"></textarea>
+    <button id="send-button">Send</button>
+
+    <ul id="messages"></ul>
+
+    <script>
+        const userId = "{{ request.user.id }}";  // Current logged-in user
+        const receiverId = "{{ receiver.id }}";  // The receiver user ID (passed from Django)
+
+        if (!receiverId) {
+            console.error("Receiver ID is missing. Ensure you passed it in the Django template context.");
+        }
+
+        // Open WebSocket connection
+        const chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${receiverId}/`);
+
+        chatSocket.onmessage = function (e) {
+            const data = JSON.parse(e.data);
+            document.querySelector("#messages").innerHTML += `<li><strong>${data.sender}:</strong> ${data.message}</li>`;
+        };
+
+        chatSocket.onclose = function (e) {
+            console.error("Chat socket closed unexpectedly");
+        };
+
+        function sendMessage() {
+            const messageInput = document.querySelector("#message");
+            const message = messageInput.value.trim();
+
+            if (message === "") return; // Prevent empty messages
+
+            chatSocket.send(JSON.stringify({
+                "message": message
+            }));
+
+            messageInput.value = "";  // Clear input after sending
+        }
+
+        document.querySelector("#send-button").addEventListener("click", sendMessage);
+
+        // Allow sending messages using the "Enter" key
+        document.querySelector("#message").addEventListener("keyup", function (event) {
+            if (event.key === "Enter" && !event.shiftKey) {
+                event.preventDefault();
+                sendMessage();
+            }
+        });
+    </script>
+</body>
+</html>

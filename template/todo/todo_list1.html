@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>To-Do List (Optimized with Pagination & Cache)</title>
+    <style>
+        table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        th, td {
+            border: 1px solid black;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>To-Do List (Optimized with Pagination & Cache)</h2>
+    <p><strong>Fetching Time:</strong> {{ fetch_time|floatformat:4 }} seconds</p>
+
+    <table>
+        <tr>
+            <th>Title</th>
+            <th>Completed</th>
+        </tr>
+        {% for todo in page_obj %}
+        <tr>
+            <td>{{ todo.title }}</td>
+            <td>{{ todo.completed }}</td>
+        </tr>
+        {% endfor %}
+    </table>
+
+    <!-- Pagination Controls -->
+    <div>
+        {% if page_obj.has_previous %}
+            <a href="?page=1">First</a>
+            <a href="?page={{ page_obj.previous_page_number }}">Previous</a>
+        {% endif %}
+
+        <span>Page {{ page_obj.number }} of {{ page_obj.paginator.num_pages }}</span>
+
+        {% if page_obj.has_next %}
+            <a href="?page={{ page_obj.next_page_number }}">Next</a>
+            <a href="?page={{ page_obj.paginator.num_pages }}">Last</a>
+        {% endif %}
+    </div>
+
+    <br>
+    <a href="{% url 'todo_list' %}">Go to Non-Optimized List</a>
+
+</body>
+</html>
