@@ -5,7 +5,7 @@
 </head>
 <body>
     <h2>Welcome, {{ user.username }}</h2>
-    
+
     <textarea id="message"></textarea>
     <button id="send-button">Send</button>
 
@@ -13,39 +13,48 @@
 
     <script>
         const userId = "{{ request.user.id }}";  // Current logged-in user
-        const receiverId = "{{ receiver.id }}";  // The receiver user ID (passed from Django)
-
+        const receiverId = "{{ receiver.id }}";  // The receiver user ID
+    
         if (!receiverId) {
-            console.error("Receiver ID is missing. Ensure you passed it in the Django template context.");
+            console.error("⚠️ Receiver ID is missing. Ensure it is passed in the Django template.");
         }
-
-        // Open WebSocket connection
-        const chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${receiverId}/`);
-
-        chatSocket.onmessage = function (e) {
-            const data = JSON.parse(e.data);
-            document.querySelector("#messages").innerHTML += `<li><strong>${data.sender}:</strong> ${data.message}</li>`;
-        };
-
-        chatSocket.onclose = function (e) {
-            console.error("Chat socket closed unexpectedly");
-        };
-
+    
+        let chatSocket;
+    
+        function connectWebSocket() {
+            chatSocket = new WebSocket(`ws://${window.location.host}/ws/chat/${userId}/${receiverId}/`);
+    
+            chatSocket.onopen = function () {
+                console.log("✅ Connected to WebSocket server");
+            };
+    
+            chatSocket.onmessage = function (e) {
+                const data = JSON.parse(e.data);
+                document.querySelector("#messages").innerHTML += `<li><strong>${data.sender}:</strong> ${data.message}</li>`;
+            };
+    
+            chatSocket.onclose = function (e) {
+                console.error("❌ Chat socket closed unexpectedly. Reconnecting in 3 seconds...");
+                setTimeout(connectWebSocket, 3000);  // Reconnect after 3 seconds
+            };
+        }
+    
         function sendMessage() {
             const messageInput = document.querySelector("#message");
             const message = messageInput.value.trim();
-
+    
             if (message === "") return; // Prevent empty messages
-
-            chatSocket.send(JSON.stringify({
-                "message": message
-            }));
-
-            messageInput.value = "";  // Clear input after sending
+    
+            if (chatSocket.readyState === WebSocket.OPEN) {
+                chatSocket.send(JSON.stringify({ "message": message }));
+                messageInput.value = "";  // Clear input after sending
+            } else {
+                console.error("⚠️ WebSocket is not connected.");
+            }
         }
-
+    
         document.querySelector("#send-button").addEventListener("click", sendMessage);
-
+    
         // Allow sending messages using the "Enter" key
         document.querySelector("#message").addEventListener("keyup", function (event) {
             if (event.key === "Enter" && !event.shiftKey) {
@@ -53,6 +62,10 @@
                 sendMessage();
             }
         });
+    
+        // Connect WebSocket on page load
+        connectWebSocket();
     </script>
+    
 </body>
 </html>

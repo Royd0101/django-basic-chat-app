@@ -1,5 +1,5 @@
 """
-URL configuration for optimize project.
+URL configuration for core project.
 
 The `urlpatterns` list routes URLs to views. For more information please see:
     https://docs.djangoproject.com/en/5.1/topics/http/urls/
@@ -22,4 +22,5 @@ urlpatterns = [
     path('', include('todo.urls')),
     path('', include('user.urls')),
     path('', include('chat.urls')),
+    path('', include('api.urls')),
 ]

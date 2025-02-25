@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Car CRUD</title>
+    <style>
+        /* Modal Styling */
+        #editModal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+        }
+        #modalOverlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 999;
+        }
+    </style>
+</head>
+<body>
+
+    <h2>Rental List</h2>
+    <ul id="rentalList"></ul>
+
+    <div id="modalOverlay"></div>
+    <div id="editModal">
+        <h2>Edit Car</h2>
+        <form id="editCarForm">
+            <input type="hidden" id="editRentalId">
+            <input type="text" id="editRentalCar" required>
+            <input type="text" id="editRentalCustomerName" required>
+            <input type="date" id="editRentalDate" required>
+            <input type="date" id="editReturnDate" required>
+            <button type="submit">Update Rental</button>
+            <button type="button" onclick="closeEditModal()">Cancel</button>
+        </form>
+    </div>
+
+    <script>
+        const API_URL = 'http://127.0.0.1:8000/rental/'; // Make sure this matches your Django URL
+
+        // Function to Fetch and Display Cars
+        async function fetchrentals() {
+            try {
+                let response = await fetch(API_URL);
+                let data = await response.json();
+                console.log(data); // Debugging: Check the fetched data
+            
+                let rentalList = document.getElementById("rentalList");
+                rentalList.innerHTML = "";
+
+                data.forEach(rental => {
+                    let li = document.createElement("li");
+                    li.innerHTML = `${rental.car} ${rental.customer_name} (${rental.rental_date}) - ${rental.return_date} 
+                        <button onclick="openEditModal(${rental.id})">Edit</button> 
+                        <button onclick="deleteCar(${rental.id})">Delete</button>`;
+                    rentalList.appendChild(li);
+                });
+            } catch (error) {
+                console.error("Error fetching cars:", error);
+            }
+        }
+
+        async function openEditModal(id) {
+            try {
+                let response = await fetch(`${API_URL}${id}/`);
+                if (!response.ok) throw new Error("Failed to fetch car details.");
+
+                let car = await response.json();
+                
+                // Populate modal with existing values
+                document.getElementById("editRentalId").value = rental.id;
+                document.getElementById("editRentalCar").value = rental.car;
+                document.getElementById("editRentalCustomerName").value = rental.customer_name;
+                document.getElementById("editRentalDate").value = rental.rental_date;
+                document.getElementById("editReturnDate").value = rental.return_date;
+         
+                // Show modal
+                document.getElementById("editModal").style.display = "block";
+                document.getElementById("modalOverlay").style.display = "block";
+            } catch (error) {
+                console.error("Error opening edit modal:", error);
+            }
+        }
+
+        // Function to Close Edit Modal
+        function closeEditModal() {
+            document.getElementById("editModal").style.display = "none";
+            document.getElementById("modalOverlay").style.display = "none";
+        }
+
+        // Function to Update Car
+        async function openEditModal(id) {
+            try {
+                let response = await fetch(`${API_URL}${id}/`);
+                if (!response.ok) throw new Error("Failed to fetch Rental details.");
+
+                let rental = await response.json();
+                
+                // Populate modal with existing values
+                document.getElementById("editRentalId").value = rental.id;
+                document.getElementById("editRentalCar").value = rental.car;
+                document.getElementById("editRentalCustomerName").value = rental.customer_name;
+                document.getElementById("editRentalDate").value = rental.rental_date;
+                document.getElementById("editReturnDate").value = rental.return_date;
+
+                // Show modal
+                document.getElementById("editModal").style.display = "block";
+                document.getElementById("modalOverlay").style.display = "block";
+            } catch (error) {
+                console.error("Error opening edit modal:", error);
+            }
+        }
+
+        // Function to Close Edit Modal
+        function closeEditModal() {
+            document.getElementById("editModal").style.display = "none";
+            document.getElementById("modalOverlay").style.display = "none";
+        }
+
+        // Function to Update a Car
+        document.getElementById("editCarForm").addEventListener("submit", async function (e) {
+            e.preventDefault();
+
+            let rentalId = document.getElementById("editRentalId").value;
+            let rentalData = {
+                car: document.getElementById("editCar").value,
+                customer_name: document.getElementById("CustomerName").value,
+                rental_date: parseInt(document.getElementById("rentalDate").value),
+                return_date: parseFloat(document.getElementById("returnDate").value),
+            };
+
+            try {
+                let response = await fetch(`${API_URL}${carId}/`, {
+                    method: "PUT",
+                    headers: { "Content-Type": "application/json" },
+                    body: JSON.stringify(rentalData)
+                });
+
+                if (response.ok) {
+                    alert("Car updated successfully!");
+                    closeEditModal();
+                    fetchrentals();
+                } else {
+                    alert("Failed to update car.");
+                }
+            } catch (error) {
+                console.error("Error updating car:", error);
+            }
+        });
+
+
+        fetchrentals();
+       
+    </script>
+
+</body>
+</html>

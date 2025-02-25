@@ -19,7 +19,7 @@ def todo_list(request):
 
 
 def todo_list1(request):
-    start_time = time.time()  # Start time tracking
+    start_time = time.time() 
 
     # Check if data is cached
     todo1 = cache.get("todo_list")

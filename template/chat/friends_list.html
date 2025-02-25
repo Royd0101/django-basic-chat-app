@@ -1,0 +1,14 @@
+<h2>Your Friends</h2>
+<ul>
+    {% for friend in friends %}
+        <li>
+            {{ friend.username }} 
+            {% if friend.status.is_online %} 
+                🟢 <span style="color: green;">Online</span> 
+            {% else %}
+                🔴 <span style="color: red;">Offline</span>
+            {% endif %}
+            - <a href="{% url 'chat' friend.id %}">Chat</a>
+        </li>
+    {% endfor %}
+</ul>
