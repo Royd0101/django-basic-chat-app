@@ -37,12 +37,18 @@
 
     <div id="modalOverlay"></div>
     <div id="editModal">
-        <h2>Edit Car</h2>
+        <h2>Edit Rental</h2>
         <form id="editCarForm">
             <input type="hidden" id="editRentalId">
-            <input type="text" id="editRentalCar" required>
+            <label for="editRentalCar">Car:</label>
+            <select id="editRentalCar" name="car" required>
+                <option value="">Loading cars...</option>
+            </select>
+            <label for="editRentalCustomerName">Customer Name:</label>
             <input type="text" id="editRentalCustomerName" required>
+            <label for="editRentalDate">Rental Date:</label>
             <input type="date" id="editRentalDate" required>
+            <label for="editReturnDate">Return Date:</label>
             <input type="date" id="editReturnDate" required>
             <button type="submit">Update Rental</button>
             <button type="button" onclick="closeEditModal()">Cancel</button>
@@ -50,14 +56,13 @@
     </div>
 
     <script>
-        const API_URL = 'http://127.0.0.1:8000/rental/'; // Make sure this matches your Django URL
+        const API_URL = 'http://127.0.0.1:8000/rental/'; // Adjust according to your Django API
 
-        // Function to Fetch and Display Cars
-        async function fetchrentals() {
+        // Fetch and display rentals
+        async function fetchRentals() {
             try {
                 let response = await fetch(API_URL);
                 let data = await response.json();
-                console.log(data); // Debugging: Check the fetched data
             
                 let rentalList = document.getElementById("rentalList");
                 rentalList.innerHTML = "";
@@ -66,105 +71,148 @@
                     let li = document.createElement("li");
                     li.innerHTML = `${rental.car} ${rental.customer_name} (${rental.rental_date}) - ${rental.return_date} 
                         <button onclick="openEditModal(${rental.id})">Edit</button> 
-                        <button onclick="deleteCar(${rental.id})">Delete</button>`;
+                        <button onclick="deleteRental(${rental.id})">Delete</button>`;
                     rentalList.appendChild(li);
                 });
             } catch (error) {
-                console.error("Error fetching cars:", error);
+                console.error("Error fetching rentals:", error);
             }
         }
 
-        async function openEditModal(id) {
+        async function populateCarDropdown(selectedCarId = null) {
             try {
-                let response = await fetch(`${API_URL}${id}/`);
-                if (!response.ok) throw new Error("Failed to fetch car details.");
-
-                let car = await response.json();
-                
-                // Populate modal with existing values
-                document.getElementById("editRentalId").value = rental.id;
-                document.getElementById("editRentalCar").value = rental.car;
-                document.getElementById("editRentalCustomerName").value = rental.customer_name;
-                document.getElementById("editRentalDate").value = rental.rental_date;
-                document.getElementById("editReturnDate").value = rental.return_date;
-         
-                // Show modal
-                document.getElementById("editModal").style.display = "block";
-                document.getElementById("modalOverlay").style.display = "block";
+                let response = await fetch(CARS_API_URL);
+                if (!response.ok) throw new Error("Failed to fetch cars.");
+        
+                let cars = await response.json();
+                console.log("Fetched cars:", cars); // Debugging line
+        
+                let carSelect = document.getElementById("editRentalCar");
+        
+                if (!carSelect) {
+                    console.error("Dropdown element 'editRentalCar' not found.");
+                    return;
+                }
+        
+                // Clear existing options
+                carSelect.innerHTML = "<option value=''>Select a Car</option>";
+        
+                // Add fetched cars to dropdown
+                cars.forEach(car => {
+                    let option = document.createElement("option");
+                    option.value = car.id; // Ensure 'car.id' exists
+                    option.textContent = `${car.make} ${car.model}`; // More readable text
+                    if (selectedCarId && car.id == selectedCarId) {
+                        option.selected = true;
+                    }
+                    carSelect.appendChild(option);
+                });
             } catch (error) {
-                console.error("Error opening edit modal:", error);
+                console.error("Error fetching car list:", error);
             }
         }
-
-        // Function to Close Edit Modal
-        function closeEditModal() {
-            document.getElementById("editModal").style.display = "none";
-            document.getElementById("modalOverlay").style.display = "none";
-        }
-
-        // Function to Update Car
+     
+        // Open the edit modal and populate fields
         async function openEditModal(id) {
             try {
                 let response = await fetch(`${API_URL}${id}/`);
-                if (!response.ok) throw new Error("Failed to fetch Rental details.");
-
+                if (!response.ok) throw new Error("Failed to fetch rental details.");
+        
                 let rental = await response.json();
-                
-                // Populate modal with existing values
+                console.log("Fetched rental details:", rental); // Debugging line
+        
                 document.getElementById("editRentalId").value = rental.id;
-                document.getElementById("editRentalCar").value = rental.car;
                 document.getElementById("editRentalCustomerName").value = rental.customer_name;
                 document.getElementById("editRentalDate").value = rental.rental_date;
                 document.getElementById("editReturnDate").value = rental.return_date;
-
-                // Show modal
+        
+                // Ensure rental.car exists before passing its ID
+                let selectedCarId = rental.car ? rental.car.id : null;
+                await populateCarDropdown(selectedCarId);
+        
                 document.getElementById("editModal").style.display = "block";
                 document.getElementById("modalOverlay").style.display = "block";
             } catch (error) {
                 console.error("Error opening edit modal:", error);
             }
         }
+        
 
-        // Function to Close Edit Modal
+        // Close edit modal
         function closeEditModal() {
             document.getElementById("editModal").style.display = "none";
             document.getElementById("modalOverlay").style.display = "none";
         }
 
-        // Function to Update a Car
+        // Update rental
         document.getElementById("editCarForm").addEventListener("submit", async function (e) {
             e.preventDefault();
 
             let rentalId = document.getElementById("editRentalId").value;
             let rentalData = {
-                car: document.getElementById("editCar").value,
-                customer_name: document.getElementById("CustomerName").value,
-                rental_date: parseInt(document.getElementById("rentalDate").value),
-                return_date: parseFloat(document.getElementById("returnDate").value),
+                car: document.getElementById("editRentalCar").value, // Using selected car from dropdown
+                customer_name: document.getElementById("editRentalCustomerName").value,
+                rental_date: document.getElementById("editRentalDate").value,
+                return_date: document.getElementById("editReturnDate").value,
             };
 
             try {
-                let response = await fetch(`${API_URL}${carId}/`, {
+                let response = await fetch(`${API_URL}${rentalId}/`, {
                     method: "PUT",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify(rentalData)
                 });
 
                 if (response.ok) {
-                    alert("Car updated successfully!");
+                    alert("Rental updated successfully!");
                     closeEditModal();
-                    fetchrentals();
+                    fetchRentals();
                 } else {
-                    alert("Failed to update car.");
+                    alert("Failed to update rental.");
                 }
             } catch (error) {
-                console.error("Error updating car:", error);
+                console.error("Error updating rental:", error);
             }
-        });
+        }); 
+        async function populateCarDropdown(selectedCarId = null) {
+            try {
+                console.log("Fetching cars from:", CARS_API_URL);
+                
+                let response = await fetch(CARS_API_URL);
+        
+                if (!response.ok) {
+                    let errorText = await response.text(); // Get server response
+                    throw new Error(`Failed to fetch cars. Status: ${response.status}, Message: ${errorText}`);
+                }
+        
+                let cars = await response.json();
+                console.log("Fetched cars:", cars);
+        
+                let carSelect = document.getElementById("editRentalCar");
+        
+                if (!carSelect) {
+                    console.error("Dropdown element 'editRentalCar' not found.");
+                    return;
+                }
+        
+                carSelect.innerHTML = "<option value=''>Select a Car</option>";
+        
+                cars.forEach(car => {
+                    let option = document.createElement("option");
+                    option.value = car.id;
+                    option.textContent = `${car.make} ${car.model}`;
+                    if (selectedCarId && car.id == selectedCarId) {
+                        option.selected = true;
+                    }
+                    carSelect.appendChild(option);
+                });
+            } catch (error) {
+                console.error("Error fetching car list:", error);
+            }
+        }
 
-
-        fetchrentals();
-       
+        // Initial fetch
+        fetchRentals();
     </script>
 
 </body>
